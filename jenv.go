@@ -32,7 +32,11 @@ func main() {
 	case "add":
 		envPath[os.Args[2]] = os.Args[3]
 	case "del":
-		delete(envPath, os.Args[2])
+		if len(envPath) < 1 {
+			fmt.Println("None conf")
+		} else {
+			delete(envPath, os.Args[2])
+		}
 	case "use":
 		flag, err := setJEnv(os.Args[2])
 		if flag {
@@ -67,22 +71,25 @@ func getCurrentJEnv() string {
 // 设置环境变量
 func setJEnv(jVersion string) (bool, error) {
 	// err := os.Setenv("JAVA_HOME", envPath[jVersion])
+	if len(envPath) < 1 {
+		return false, errors.New("None conf")
+	}
 	cmd := exec.Command("setx", "JAVA_HOME", envPath[jVersion])
 	err := cmd.Run()
 	if err != nil {
 		return false, err
 	}
-	if os.Getenv("JAVA_HOME") != envPath[jVersion] {
-		return false, errors.New("Fail")
-	}
+	// if os.Getenv("JAVA_HOME") != envPath[jVersion] {
+	// 	return false, errors.New("Fail")
+	// }
 	return true, nil
 }
 
 // 读取配置文件
-func readConf() error {
+func readConf() (bool, error) {
 	_, err := os.Stat(filepath.Dir(exePath) + "\\jenv.conf") // 判断文件是否存在
 	if err != nil {
-		return err
+		return false, err
 	}
 	conf, _ := os.OpenFile(filepath.Dir(exePath)+"\\jenv.conf", os.O_CREATE, 0666) // 无配置文件时创建一个
 	var input = make([]byte, 1024)
@@ -91,7 +98,7 @@ func readConf() error {
 	if err != nil {
 		fmt.Println("配置文件异常")
 	}
-	return nil
+	return true, nil
 }
 
 // 写入配置文件
@@ -114,11 +121,11 @@ func writeConf() bool {
 
 func printHelp() {
 	fmt.Println("Simple tool for switching JDK version")
-	fmt.Println("usage: jenv.exe [action] [args...]")
-	fmt.Printf("\nactions \t args  \t Description\n")
-	fmt.Printf("list    \t       \t List all local jdk versions\n")
-	fmt.Printf("add  \t tag  path/to/jdk \t Add jdk path records\n")
-	fmt.Printf("del     \t tag   \t Remove a record\n")
-	fmt.Printf("use     \t tag   \t Switch to one of jdk version\n")
-	fmt.Printf("help    \t       \t Print this message")
+	fmt.Println("usage: jenv.exe [action] [args...]\n")
+	fmt.Println("example:")
+	fmt.Println("jenv list                         List all local jdk versions")
+	fmt.Println("jenv add jdk8 path/to/java        Add jdk path records")
+	fmt.Println("jenv del jdk8                     Remove a record")
+	fmt.Println("jenv use jdk8                     Switch to one of jdk version")
+	fmt.Println("jenv help                         Print this message")
 }
