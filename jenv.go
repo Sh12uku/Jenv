@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 var envPath = map[string]string{}
+var exePath, _ = os.Executable()
 
 func main() {
 	if len(os.Args) < 2 {
@@ -43,7 +46,7 @@ func main() {
 		fmt.Println("Wrong arguments!")
 		printHelp()
 	}
-	fmt.Println(os.Getenv("JAVA_HOME"))
+	// fmt.Println(os.Getenv("JAVA_HOME"))
 	writeConf()
 	// readConf()
 
@@ -63,7 +66,9 @@ func getCurrentJEnv() string {
 
 // 设置环境变量
 func setJEnv(jVersion string) (bool, error) {
-	err := os.Setenv("JAVA_HOME", envPath[jVersion])
+	// err := os.Setenv("JAVA_HOME", envPath[jVersion])
+	cmd := exec.Command("setx", "JAVA_HOME", envPath[jVersion])
+	err := cmd.Run()
 	if err != nil {
 		return false, err
 	}
@@ -75,11 +80,11 @@ func setJEnv(jVersion string) (bool, error) {
 
 // 读取配置文件
 func readConf() error {
-	_, err := os.Stat("jenv.conf") // 判断文件是否存在
+	_, err := os.Stat(filepath.Dir(exePath) + "\\jenv.conf") // 判断文件是否存在
 	if err != nil {
 		return err
 	}
-	conf, _ := os.OpenFile("jenv.conf", os.O_CREATE, 0666) // 无配置文件时创建一个
+	conf, _ := os.OpenFile(filepath.Dir(exePath)+"\\jenv.conf", os.O_CREATE, 0666) // 无配置文件时创建一个
 	var input = make([]byte, 1024)
 	total, _ := conf.Read(input)
 	err = json.Unmarshal(input[:total], &envPath) // 解析json
@@ -91,8 +96,8 @@ func readConf() error {
 
 // 写入配置文件
 func writeConf() bool {
-	conf, err := os.OpenFile("jenv.conf", os.O_CREATE|os.O_TRUNC, 0666) // 打开时清空文件
-	if err != nil {                                                     // 有错误说明打开文件失败，一般为权限问题
+	conf, err := os.OpenFile(filepath.Dir(exePath)+"\\jenv.conf", os.O_CREATE|os.O_TRUNC, 0666) // 打开时清空文件
+	if err != nil {                                                                             // 有错误说明打开文件失败，一般为权限问题
 		fmt.Println(err)
 		return false
 	}
